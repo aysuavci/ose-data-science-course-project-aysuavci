@@ -104,10 +104,10 @@ def Appendix_Table_3(df):
     model_ols = smf.ols(formula= "beliefadjustment_normalized ~ beliefadjustment_bayes_norm + dummynews_goodbad + interact_negative_bayes", data=df[df['treatgroup'] == 4])
     reg_s_3 = model_ols.fit(cov_type='HC1')
 
-    Table8 = Stargazer([reg_s_1, reg_s_2, reg_s_3])
-    Table8.title('Table 8: Belief Adjustment in the Short-Run')
-    Table8.dependent_variable_name('Belief Adjustment')
-    Table8.custom_columns(['Positive Information', 'Negative Information', 'Difference-in-difference'], [1,1,1])
+    Appendix_Table_3 = Stargazer([reg_s_1, reg_s_2, reg_s_3])
+    Appendix_Table_3.title('Table 8: Belief Adjustment in the Short-Run')
+    Appendix_Table_3.dependent_variable_name('Belief Adjustment')
+    Appendix_Table_3.custom_columns(['Positive Information', 'Negative Information', 'Difference-in-difference'], [1,1,1])
     
     return Appendix_Table_3
 
@@ -132,3 +132,8 @@ def Extension_Table_1(df_ex):
                         data=df_ex[(df_ex['frac_upcard'] == 0) | (df_ex['frac_upcard'] == 1)],
                         group_var='ID')
     return print(summary_col([reg_B,reg_IQ,reg_C],stars=True,float_format='%0.2f', model_names=['Beauty','IQ','Control']))
+
+def Extension_Table_2(df_control):
+    model_ols = smf.ols(formula= "belief ~ dummy_feedback + secondwave + feedback_secondwave", data=df_control)
+    reg_c1 = model_ols.fit(cov_type='HC1')
+    return reg_c1.summary()

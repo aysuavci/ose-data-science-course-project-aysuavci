@@ -148,3 +148,14 @@ def cluster_fit(formula, data, group_var):
                                        groups=data.iloc[to_keep][group_var])
     return robust
 
+def get_variables_for_extension(df_control):
+    #Dummies for analysis
+    df_control['secondwave'] = np.nan
+    df_control.loc[df_control['time'] == 2, 'secondwave'] = 1
+    df_control.loc[df_control['time'] == 1, 'secondwave'] = 0
+    df_control['dummy_feedback'] = np.nan
+    df_control.loc[df_control['treatment'] == 'confidence_1monthlater', 'dummy_feedback'] = 1
+    df_control.loc[df_control['treatment'] == 'nofeedback', 'dummy_feedback'] = 0
+    #Interaction term
+    df_control['feedback_secondwave'] = df_control['secondwave']*df_control['dummy_feedback']
+    return 
