@@ -128,7 +128,96 @@ def Appendix_Figure_2(df):
     
     return Appendix_Figure_2
 
-def Extension_Figure_1(df):
+
+def Extension_Figure_1(df_ex):
+    fig, axes = plt.subplots(1, 3, sharex=True, figsize=(20,5))
+    fig.suptitle('FIGURE 2. Noise in Round-to-Round Updating by Treatment and Signal Type')
+
+    sns.set_style('whitegrid')
+    sns.regplot('meanbelief_priorbayesimage','meanbeliefimage',
+                df_ex[(df_ex['frac_upimage'] == 0) & (df_ex['IQtask'] ==0) & (df_ex['round'] > 0)],
+                scatter_kws={'s':30},line_kws={'color':'lightblue'}, marker="+", ax=axes[0], label='Bad news')
+    sns.regplot('meanbelief_priorbayesimage','meanbeliefimage',
+                df_ex[(df_ex['frac_upimage'] == 1) & (df_ex['IQtask'] ==0) & (df_ex['round'] > 0)],
+                scatter_kws={'s':20},line_kws={'color':'orange'}, ax=axes[0],  label='Good news')
+
+    sns.regplot('meanbelief_priorbayesimage','meanbeliefimage',
+                df_ex[(df_ex['frac_upimage'] == 0) & (df_ex['IQtask'] ==1) & (df_ex['round'] > 0)],
+                scatter_kws={'s':30},line_kws={'color':'lightblue'}, marker="+", ax=axes[1], label='Bad news')
+    sns.regplot('meanbelief_priorbayesimage','meanbeliefimage',
+                df_ex[(df_ex['frac_upimage'] == 1) & (df_ex['IQtask'] ==1) & (df_ex['round'] > 0)],
+                scatter_kws={'s':20},line_kws={'color':'orange'}, ax=axes[1], label='Good news')
+
+    sns.regplot('meanbelief_priorbayescard','meanbeliefcard',
+                df_ex[(df_ex['frac_upcard'] == 0) & (df_ex['round'] > 0)],
+                scatter_kws={'s':30},line_kws={'color':'lightblue'}, marker="+", ax=axes[2], label='Bad news')
+    sns.regplot('meanbelief_priorbayescard','meanbeliefcard',
+                df_ex[(df_ex['frac_upcard'] == 1) & (df_ex['round'] > 0)],
+                scatter_kws={'s':20},line_kws={'color':'orange'}, ax=axes[2],  label='Good news')
+
+    axes[0].set_title('Panel A. Beauty')
+    axes[0].set_xlabel('Bayesian posterior mean')
+    axes[0].set_ylabel('Posterior mean of Subjects')
+    axes[0].legend(loc='lower right')
+    axes[1].set_title('Panel B. IQ')
+    axes[1].set_xlabel('Bayesian posterior mean')
+    axes[1].set_ylabel('Posterior mean of Subjects')
+    axes[1].legend(loc='lower right')
+    axes[2].set_title('Panel C. Control')
+    axes[2].set_xlabel('Bayesian posterior mean, using priors of subjects')
+    axes[2].set_ylabel('Posterior mean of Subjects')
+    axes[2].legend(loc='lower right')
+    plt.show()
+    return Extension_Figure_1
+
+
+def cluster_fit(formula, data, group_var):
+    """
+    To run regressions with standard errors clustered at subject level
+    """
+    fit = sm_api.OLS.from_formula(formula, data=data).fit()
+    to_keep = pd.RangeIndex(len(data)).difference(pd.Index(fit.model.data.missing_row_idx))
+    robust = fit.get_robustcov_results(cov_type='cluster',
+                                       groups=data.iloc[to_keep][group_var])
+    return robust
+
+
+def Extension_Figure_2(df_ex):
+    #Regressions with clustered standard errors at subject level
+    
+    reg_B_b_ = cluster_fit('meanbeliefimage ~ meanbelief_priorbayesimage + mb_fracup + frac_upimage',
+                           data=df_ex[(df_ex['frac_upimage'] == 0) & (df_ex['IQtask'] ==0)], group_var='ID')
+    reg_B_g_ = cluster_fit('meanbeliefimage ~ meanbelief_priorbayesimage + mb_fracup + frac_upimage',
+                           data=df_ex[(df_ex['frac_upimage'] == 1) & (df_ex['IQtask'] ==0)], group_var='ID')
+    
+    reg_IQ_b_ = cluster_fit('meanbeliefimage ~ meanbelief_priorbayesimage + mb_fracup + frac_upimage',
+                            data=df_ex[(df_ex['frac_upimage'] == 0) & (df_ex['IQtask'] ==1)], group_var='ID')
+    reg_IQ_g_ = cluster_fit('meanbeliefimage ~ meanbelief_priorbayesimage + mb_fracup + frac_upimage',
+                            data=df_ex[(df_ex['frac_upimage'] == 1) & (df_ex['IQtask'] ==1)], group_var='ID')
+    
+    reg_C_b_ = cluster_fit('meanbeliefcard ~ meanbelief_priorbayescard + mb_fracupcard + frac_upcard',
+                           data=df_ex[(df_ex['frac_upcard'] == 0)], group_var='ID')
+    reg_C_g_ = cluster_fit('meanbeliefcard ~ meanbelief_priorbayescard + mb_fracupcard + frac_upcard',
+                           data=df_ex[(df_ex['frac_upcard'] == 0)], group_var='ID')
+    
+    fig2_D= plt.figure(num=None, figsize=[15,15])
+    fig, ax = plt.subplots()
+    ax.plot(['BAD', 'GOOD'], [reg_B_b_.rsquared, reg_B_g_.rsquared], color='blue',label='Beauty')
+    ax.scatter(['BAD', 'GOOD'], [reg_B_b_.rsquared, reg_B_g_.rsquared], marker =',', color='blue', s=80)
+
+    ax.plot(['BAD', 'GOOD'], [reg_IQ_b_.rsquared, reg_IQ_g_.rsquared], color='red',label='IQ')
+    ax.scatter(['BAD', 'GOOD'], [reg_IQ_b_.rsquared, reg_IQ_g_.rsquared], marker ='o', color='red', s=80)
+
+    ax.plot(['BAD', 'GOOD'], [reg_C_b_.rsquared, reg_C_g_.rsquared], color='green',label='Control')
+    ax.scatter(['BAD', 'GOOD'], [reg_C_b_.rsquared, reg_C_g_.rsquared], marker ='^', color='green', s=80)
+    plt.legend()
+    plt.xlabel('Condition')
+    plt.xlim(-0.3,1.3)
+    plt.ylabel('$R^2$')
+    plt.title("Panel D. $R^2$ by condition and signal valence")
+    return Extension_Figure_2
+
+def Extension_Figure_3(df):
     fig, [[ax1, ax2], [ax3, ax4]] = plt.subplots(nrows=2, ncols=2, figsize=(12, 12))
     fig.suptitle('EXTENSION - FIGURE 1: Bayesian & Observed Posterior Beliefs', fontsize=15)
     fig.suptitle('EXTENSION - FIGURE 1: Bayesian & Observed Posterior Beliefs', fontsize=15)
@@ -183,94 +272,67 @@ def Extension_Figure_1(df):
     ax3.set_ylabel('Confidence 1-month', fontsize=14)
     ax3.set_ylim([10,100])
     
-    return Extension_Figure_1
+    return Extension_Figure_3
     
-    
-    
-def Extension_Figure_2(df_ex):
-    fig, axes = plt.subplots(1, 3, sharex=True, figsize=(20,5))
-    fig.suptitle('FIGURE 2. Noise in Round-to-Round Updating by Treatment and Signal Type')
+
+
+def Extension_Figure_4(df):
+    fig, axes = plt.subplots(1, 2, sharex=True, figsize=(20,5))
+    fig.suptitle('EXTENSION FIGURE 4. Belief Updating by Treatment and Signal Type')
 
     sns.set_style('whitegrid')
-    sns.regplot('meanbelief_priorbayesimage','meanbeliefimage',
-                df_ex[(df_ex['frac_upimage'] == 0) & (df_ex['IQtask'] ==0) & (df_ex['round'] > 0)],
-                scatter_kws={'s':30},line_kws={'color':'lightblue'}, marker="+", ax=axes[0], label='Bad news')
-    sns.regplot('meanbelief_priorbayesimage','meanbeliefimage',
-                df_ex[(df_ex['frac_upimage'] == 1) & (df_ex['IQtask'] ==0) & (df_ex['round'] > 0)],
-                scatter_kws={'s':20},line_kws={'color':'orange'}, ax=axes[0],  label='Good news')
+    #Pos
+    sns.regplot('beliefadjustment_bayes_norm','beliefadjustment_normalized', df[(df['dummytreat_direct1month'] == 0) & (df['dummynews_goodbad'] ==0)],
+                    scatter_kws={'s':30},line_kws={'color':'lightblue'}, marker="+", ax=axes[0], label='good')
+    sns.regplot('beliefadjustment_bayes_norm','beliefadjustment_normalized', df[(df['dummytreat_direct1month'] == 0) & (df['dummynews_goodbad'] ==1)],
+                    scatter_kws={'s':20},line_kws={'color':'orange'}, ax=axes[0],  label='bad')
 
-    sns.regplot('meanbelief_priorbayesimage','meanbeliefimage',
-                df_ex[(df_ex['frac_upimage'] == 0) & (df_ex['IQtask'] ==1) & (df_ex['round'] > 0)],
-                scatter_kws={'s':30},line_kws={'color':'lightblue'}, marker="+", ax=axes[1], label='Bad news')
-    sns.regplot('meanbelief_priorbayesimage','meanbeliefimage',
-                df_ex[(df_ex['frac_upimage'] == 1) & (df_ex['IQtask'] ==1) & (df_ex['round'] > 0)],
-                scatter_kws={'s':20},line_kws={'color':'orange'}, ax=axes[1], label='Good news')
+    #Neg
+    sns.regplot('beliefadjustment_bayes_norm','beliefadjustment_normalized', df[(df['dummytreat_direct1month'] == 1) & (df['dummynews_goodbad'] ==0)],
+                    scatter_kws={'s':30},line_kws={'color':'lightblue'}, marker="+", ax=axes[1], label='good')
+    sns.regplot('beliefadjustment_bayes_norm','beliefadjustment_normalized', df[(df['dummytreat_direct1month'] == 1) & (df['dummynews_goodbad'] ==1)],
+                    scatter_kws={'s':20},line_kws={'color':'orange'}, ax=axes[1],  label='bad')
 
-    sns.regplot('meanbelief_priorbayescard','meanbeliefcard',
-                df_ex[(df_ex['frac_upcard'] == 0) & (df_ex['round'] > 0)],
-                scatter_kws={'s':30},line_kws={'color':'lightblue'}, marker="+", ax=axes[2], label='Bad news')
-    sns.regplot('meanbelief_priorbayescard','meanbeliefcard',
-                df_ex[(df_ex['frac_upcard'] == 1) & (df_ex['round'] > 0)],
-                scatter_kws={'s':20},line_kws={'color':'orange'}, ax=axes[2],  label='Good news')
-
-    axes[0].set_title('Panel A. Beauty')
+    axes[0].set_title('Panel A. Direct')
     axes[0].set_xlabel('Bayesian posterior mean')
     axes[0].set_ylabel('Posterior mean of Subjects')
     axes[0].legend(loc='lower right')
-    axes[1].set_title('Panel B. IQ')
+    axes[1].set_title('Panel B. 1 month')
     axes[1].set_xlabel('Bayesian posterior mean')
     axes[1].set_ylabel('Posterior mean of Subjects')
     axes[1].legend(loc='lower right')
-    axes[2].set_title('Panel C. Control')
-    axes[2].set_xlabel('Bayesian posterior mean, using priors of subjects')
-    axes[2].set_ylabel('Posterior mean of Subjects')
-    axes[2].legend(loc='lower right')
+    axes[1].set_ylim([-80,70])
+    axes[0].set_ylim([-80,70])
     plt.show()
-    return Extension_Figure_2
+    return Extension_Figure_4
 
+def Extension_Figure_5(df):
+    fig, axes = plt.subplots(1, 2, sharex=True, figsize=(20,5))
+    fig.suptitle('EXTENSION FIGURE 4. Belief Updating by Treatment and Signal Type')
 
-def cluster_fit(formula, data, group_var):
-    """
-    To run regressions with standard errors clustered at subject level
-    """
-    fit = sm_api.OLS.from_formula(formula, data=data).fit()
-    to_keep = pd.RangeIndex(len(data)).difference(pd.Index(fit.model.data.missing_row_idx))
-    robust = fit.get_robustcov_results(cov_type='cluster',
-                                       groups=data.iloc[to_keep][group_var])
-    return robust
+    sns.set_style('whitegrid')
+    #Pos
+    sns.regplot('beliefadjustment_bayes_norm','beliefadjustment_normalized', df[(df['dummytreat_direct1month'] == 0) & (df['dummynews_goodbad'] ==0)],
+                    scatter_kws={'s':30},line_kws={'color':'lightblue'}, marker="+", ax=axes[0], label='direct')
+    sns.regplot('beliefadjustment_bayes_norm','beliefadjustment_normalized', df[(df['dummytreat_direct1month'] == 1) & (df['dummynews_goodbad'] ==0)],
+                    scatter_kws={'s':20},line_kws={'color':'orange'}, ax=axes[0],  label='1month')
 
+    #Neg
+    sns.regplot('beliefadjustment_bayes_norm','beliefadjustment_normalized', df[(df['dummytreat_direct1month'] == 0) & (df['dummynews_goodbad'] ==1)],
+                    scatter_kws={'s':30},line_kws={'color':'lightblue'}, marker="+", ax=axes[1], label='direct')
+    sns.regplot('beliefadjustment_bayes_norm','beliefadjustment_normalized', df[(df['dummytreat_direct1month'] == 1) & (df['dummynews_goodbad'] ==1)],
+                    scatter_kws={'s':20},line_kws={'color':'orange'}, ax=axes[1],  label='1month')
 
-def Extension_Figure_3(df_ex):
-    #Regressions with clustered standard errors at subject level
-    
-    reg_B_b_ = cluster_fit('meanbeliefimage ~ meanbelief_priorbayesimage + mb_fracup + frac_upimage',
-                           data=df_ex[(df_ex['frac_upimage'] == 0) & (df_ex['IQtask'] ==0)], group_var='ID')
-    reg_B_g_ = cluster_fit('meanbeliefimage ~ meanbelief_priorbayesimage + mb_fracup + frac_upimage',
-                           data=df_ex[(df_ex['frac_upimage'] == 1) & (df_ex['IQtask'] ==0)], group_var='ID')
-    
-    reg_IQ_b_ = cluster_fit('meanbeliefimage ~ meanbelief_priorbayesimage + mb_fracup + frac_upimage',
-                            data=df_ex[(df_ex['frac_upimage'] == 0) & (df_ex['IQtask'] ==1)], group_var='ID')
-    reg_IQ_g_ = cluster_fit('meanbeliefimage ~ meanbelief_priorbayesimage + mb_fracup + frac_upimage',
-                            data=df_ex[(df_ex['frac_upimage'] == 1) & (df_ex['IQtask'] ==1)], group_var='ID')
-    
-    reg_C_b_ = cluster_fit('meanbeliefcard ~ meanbelief_priorbayescard + mb_fracupcard + frac_upcard',
-                           data=df_ex[(df_ex['frac_upcard'] == 0)], group_var='ID')
-    reg_C_g_ = cluster_fit('meanbeliefcard ~ meanbelief_priorbayescard + mb_fracupcard + frac_upcard',
-                           data=df_ex[(df_ex['frac_upcard'] == 0)], group_var='ID')
-    
-    fig2_D= plt.figure(num=None, figsize=[15,15])
-    fig, ax = plt.subplots()
-    ax.plot(['BAD', 'GOOD'], [reg_B_b_.rsquared, reg_B_g_.rsquared], color='blue',label='Beauty')
-    ax.scatter(['BAD', 'GOOD'], [reg_B_b_.rsquared, reg_B_g_.rsquared], marker =',', color='blue', s=80)
+    axes[0].set_title('Panel A. Positive Feedback')
+    axes[0].set_xlabel('Bayesian posterior mean')
+    axes[0].set_ylabel('Posterior mean of Subjects')
+    axes[0].legend(loc='lower right')
+    axes[1].set_title('Panel B. Negative Feedback')
+    axes[1].set_xlabel('Bayesian posterior mean')
+    axes[1].set_ylabel('Posterior mean of Subjects')
+    axes[1].legend(loc='lower right')
+    axes[1].set_ylim([-80,70])
+    axes[0].set_ylim([-80,70])
+    plt.show()
+    return Extension_Figure_5
 
-    ax.plot(['BAD', 'GOOD'], [reg_IQ_b_.rsquared, reg_IQ_g_.rsquared], color='red',label='IQ')
-    ax.scatter(['BAD', 'GOOD'], [reg_IQ_b_.rsquared, reg_IQ_g_.rsquared], marker ='o', color='red', s=80)
-
-    ax.plot(['BAD', 'GOOD'], [reg_C_b_.rsquared, reg_C_g_.rsquared], color='green',label='Control')
-    ax.scatter(['BAD', 'GOOD'], [reg_C_b_.rsquared, reg_C_g_.rsquared], marker ='^', color='green', s=80)
-    plt.legend()
-    plt.xlabel('Condition')
-    plt.xlim(-0.3,1.3)
-    plt.ylabel('$R^2$')
-    plt.title("Panel D. $R^2$ by condition and signal valence")
-    return Extension_Figure_3
