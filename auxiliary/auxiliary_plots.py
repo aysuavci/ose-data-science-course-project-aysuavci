@@ -13,8 +13,8 @@ from IPython.display import HTML
 from stargazer.stargazer import Stargazer, LineLocation
 from statsmodels.iolib.summary2 import summary_col
 
-from auxiliary.example_project_auxiliary_predictions import *
-from auxiliary.example_project_auxiliary_plots import *
+from auxiliary.auxiliary_tools import *
+from auxiliary.auxiliary_plots import *
 from auxiliary.auxiliary_tables import *
 
 def Main_Figure1(df):
