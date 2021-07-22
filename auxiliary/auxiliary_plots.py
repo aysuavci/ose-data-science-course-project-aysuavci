@@ -130,6 +130,8 @@ def Appendix_Figure_2(df):
 
 
 def Extension_Figure_1(df_ex):
+    import warnings
+    warnings.simplefilter(action='ignore', category=FutureWarning)
     fig, axes = plt.subplots(1, 3, sharex=True, figsize=(20,5))
     fig.suptitle('FIGURE 2. Noise in Round-to-Round Updating by Treatment and Signal Type')
 
@@ -183,6 +185,7 @@ def cluster_fit(formula, data, group_var):
 
 
 def Extension_Figure_2(df_ex):
+  
     #Regressions with clustered standard errors at subject level
     
     reg_B_b_ = cluster_fit('meanbeliefimage ~ meanbelief_priorbayesimage + mb_fracup + frac_upimage',
