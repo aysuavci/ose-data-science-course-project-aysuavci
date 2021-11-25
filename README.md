@@ -6,13 +6,5 @@ In the literature on motivated reasoning, many studies argue that individuals ma
 
 In order to establish the dynamic belief pattern, Zimmermann (2020) made use of difference-in-difference (DID) estimations which will be analyzed in detail through the project notebook. The replication is carried on the main notebook from this repository. Functions for tables, plots, regressions and variable definitions, can be found in the auxiliary folders. 
 
-To ensure the reproducibility of the project, the repository is supported by a GitHub Actions Continuos Integration (CI). The state of my workflow can be found here:
-
-</a>
-<a href="https://github.com/OpenSourceEconomics/ose-data-science-course-project-aysuavci/actions/workflows/ci.yml"
-    target="_parent">
-    <img align="center"
-       src="https://github.com/OpenSourceEconomics/ose-data-science-course-project-aysuavci/actions/workflows/ci.yml/badge.svg"
-       width="200" height="20">
-</a>
+To ensure the reproducibility of the project, the repository is supported by a GitHub Actions Continuos Integration (CI).
 
